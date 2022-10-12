@@ -1,4 +1,5 @@
 const express = require('express')
+const bodyParser = require('body-parser')
 const { ETwitterStreamEvent, TweetStream, TwitterApi, ETwitterApiError, auth} =require('twitter-api-v2');
 const axios  = require('axios')
 const { response, json } = require('express')
@@ -7,7 +8,7 @@ const app = express()
 app.use(bodyParser.urlencoded({
     extended: true
   }));
-  
+
 const port = process.env.PORT || 3000
 
 // const twitterApi = new twitter({
