@@ -4,6 +4,10 @@ const axios  = require('axios')
 const { response, json } = require('express')
 const app = express()
 
+app.use(bodyParser.urlencoded({
+    extended: true
+  }));
+  
 const port = process.env.PORT || 3000
 
 // const twitterApi = new twitter({
