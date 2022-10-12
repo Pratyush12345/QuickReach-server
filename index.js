@@ -310,15 +310,16 @@ app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
     const twitterPublisherId = req.body["twitterId"]
     const IsAllowedToIncreaseReach = req.body["isAllowedToIncreaseReachRetweets"]
 
-    userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
-    if(!IsAllowedToIncreaseReach){
-        removeInFollowList(twitterPublisherId)
-    }
-    else{
-        addInFollowList(twitterPublisherId)
-    }
+    res.status(200).send({twitterPublisherId, IsAllowedToIncreaseReach});
+    // userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
+    // if(!IsAllowedToIncreaseReach){
+    //     removeInFollowList(twitterPublisherId)
+    // }
+    // else{
+    //     addInFollowList(twitterPublisherId)
+    // }
 
-    res.status(200).send("onIsAllowedToIncreaseReachChangeInPublisher");
+    // res.status(200).send("onIsAllowedToIncreaseReachChangeInPublisher");
 })
 
 app.post("/onIsAllowedAutoRetweetsChangeInSubscriber", (req, res)=>{
