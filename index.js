@@ -302,11 +302,12 @@ app.post("/onPaymentChangeInSubscriber", (req, res)=>{
 
 app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
     
-    const twitterPublisherId = req.body["twitterId"]
+    //const twitterPublisherId = req.body["twitterId"]
+    res.status(200).send(req);
     const IsAllowedToIncreaseReach = req.body["isAllowedToIncreaseReachRetweets"]
 
-    userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
-    res.status(200).send(userList);
+    //userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
+    //res.status(200).send(userList);
     // if(!IsAllowedToIncreaseReach){
     //     removeInFollowList(twitterPublisherId)
     // }
