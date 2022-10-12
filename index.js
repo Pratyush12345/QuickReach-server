@@ -324,19 +324,19 @@ app.post("/onIsAllowedAutoRetweetsChangeInSubscriber", (req, res)=>{
     res.status(200).send("onIsAllowedAutoRetweetsChangeInSubscriber");
 })
 
-app.post("/testPublisherList", (req, res)=>{
+app.get("/testPublisherList", (req, res)=>{
     console.log("publisher List")
     console.log(userList)
     res.status(200).send(userList);
 })
 
-app.post("/testSubscriberList", (req, res)=>{
+app.get("/testSubscriberList", (req, res)=>{
     console.log("Subscriber List")
     console.log(subscribersList)
     res.status(200).send(subscribersList);
 })
 
-app.post("/testFollowList", (req, res)=>{
+app.get("/testFollowList", (req, res)=>{
     console.log("Follow List")
     console.log(followList)
     res.status(200).send(followList);
