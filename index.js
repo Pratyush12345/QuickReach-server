@@ -303,7 +303,7 @@ app.post("/onPaymentChangeInSubscriber", (req, res)=>{
 app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
     
     //const twitterPublisherId = req.body["twitterId"]
-    res.status(200).send(JSON.stringify(req));
+    res.status(200).send(req.body);
     //const IsAllowedToIncreaseReach = req.body["isAllowedToIncreaseReachRetweets"]
 
     //userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
