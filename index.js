@@ -1,18 +1,21 @@
 const express = require('express')
-const twit = require('twit')
+const { ETwitterStreamEvent, TweetStream, TwitterApi, ETwitterApiError, auth} =require('twitter-api-v2');
 const axios  = require('axios')
 const { response, json } = require('express')
 const app = express()
 
 const port = process.env.PORT || 3000
 
-const twitterApi = new twit({
-    consumer_key : "K0xNtDv7VouUC294pBRPgAHdr" ,
-    consumer_secret : "2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR",
-    access_token : "620757286-BPZuCXML1SXbmyECresO1cqs7dDgmOBnB6PngoQO",
-    access_token_secret : "kDaeOIFzfYDfBfetHad9TJgP2h2A0LZIjCkRMxuXTuf1P",
-    timeout_ms : 60 * 1000
-})
+// const twitterApi = new twitter({
+//     consumer_key : "K0xNtDv7VouUC294pBRPgAHdr" ,
+//     consumer_secret : "2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR",
+//     access_token : "620757286-BPZuCXML1SXbmyECresO1cqs7dDgmOBnB6PngoQO",
+//     access_token_secret : "kDaeOIFzfYDfBfetHad9TJgP2h2A0LZIjCkRMxuXTuf1P",
+//     timeout_ms : 60 * 1000
+// })
+
+const client = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAFz6hAEAAAAARD6nNnZn96aDoOuSD8i4%2F2MboVI%3DBOBLcdjiMcw1Vufj94s0oPWGiA2TNdmDCzMgFp7sLjpi8Fz1hK');
+    
 
 var stream
 let userList = {}
@@ -31,137 +34,184 @@ function fetchTwitterSubscribers(){
     })  
 }
 
-function setStream(){
-    stream  = twitterApi.stream('statuses/filter', {
-        follow: followList
-    })
+async function setStream(){
+      const rules = await client.v2.streamRules()
+
+      var ruleIds = rules.data.map(rule => rule.id);
+      
+      const deleteRules = await client.v2.updateStreamRules({
+        delete: {
+          ids: ruleIds,
+        },
+      });
+
+      const addedRules = await client.v2.updateStreamRules({
+        add: [
+          {value: followList},
+          ],
+      });
+    
 }
 
-function doAllRetweets(subscribers, tweet){
-    subscribers.forEach((element, key) => {
-            
-        var retweetCred = new twit({
-            consumer_key : "K0xNtDv7VouUC294pBRPgAHdr" ,
-            consumer_secret : "2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR",
-            access_token : element.accessToken,
-            access_token_secret : element.accessTokenSecret,
-            timeout_ms : 60 * 500
-        })
 
-        retweetCred.post("statuses/retweet/:id",{
-            id: tweet.id_str
-            },
+function doAllRetweets(subscribers, tweet){
+    
+    subscribers.forEach(async(element, key) => {
+           
+        const retweetClient = new TwitterApi({
+            appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
+            appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
+            accessToken: element.accessToken,
+            accessSecret: element.accessTokenSecret,
+          });
         
-            (err, data, res)=>{
-                console.log("Retweeted");
-                subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
-                axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString/updateSubscriberReTweetCount', {
+        const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
+        
+        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
+        
+        if(createRetweet.data.retweeted){
+            subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
+                axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
                             "twitterId" : element.twitterId ,
                             "count": subscribersList[element.twitterId].retweetsDoneCount
                 })
-            }
-        )
-        
-        retweetCred.post("favorites/create",{
-            id: tweet.id_str
-            },
-        
-            (err, data, res)=>{
-                console.log("Retweeted");
-            }
-        )
-      });
+        }
+
+    });
 }
 
 function doCheckedRetweets(subscribers, tweet){
-    
-    subscribers.forEach((element, key) => {
-       
-      if((subscribersList[element.twitterId].isPaidForDoingRetweet || subscribersList[element.twitterId].retweetsDoneCount)
+    console.log(tweet.data.id)
+    console.log("do check retweets")
+    subscribers.forEach(async(element, key) => {
+       console.log("inside----------------------------")
+      if((subscribersList[element.twitterId].isPaidForDoingRetweet || subscribersList[element.twitterId].retweetsDoneCount<10)
          && subscribersList[element.twitterId].isAllowedAutomaticRetweets){
-
-        var retweetCred = new twit({
-            consumer_key : "K0xNtDv7VouUC294pBRPgAHdr" ,
-            consumer_secret : "2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR",
-            access_token : element.accessToken,
-            access_token_secret : element.accessTokenSecret,
-            timeout_ms : 60 * 500
-        })
-
-        retweetCred.post("statuses/retweet/:id",{
-            id: tweet.id_str
-            },
+         
+            console.log("eddddddddddddddddddddddddddddddd")
+        const retweetClient = new TwitterApi({
+                appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
+                appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
+                accessToken: element.accessToken,
+                accessSecret: element.accessTokenSecret,
+              });
+        console.log("confirmmmmmm")
+        const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
         
-            (err, data, res)=>{
-                console.log("Retweeted");
-                subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1 
-                axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString/updateSubscriberReTweetCount', {
+        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
+        console.log(createRetweet.data.retweeted)
+        if(createRetweet.data.retweeted){
+            subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1 
+                axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
                             "twitterId" : element.twitterId ,
                             "count": subscribersList[element.twitterId].retweetsDoneCount
                 })
-            }
-        )
-        
-        retweetCred.post("favorites/create",{
-            id: tweet.id_str
-            },
-        
-            (err, data, res)=>{
-                console.log("Retweeted");
-            }
-        )
-      }
+        }
+       }
       });
 }
 
+ function addInFollowList(Id){
+  if(followList == ""){
+    followList = followList + "-is:retweet from:" + Id;
+  }
+  else{
+    followList = followList + " OR " + "-is:retweet from:" + Id;
+  }
+  setStream()
+ }
+
+ function removeInFollowList(Id){
+    if(followList.includes("-is:retweet from:" + Id + " OR ")){
+        followList = followList.replace("-is:retweet from:" + Id + " OR ", "");
+      }
+      else{
+        followList = followList.replace(" OR -is:retweet from:" + Id, "");
+      }
+      followList = followList.trim()
+  setStream()
+}
+
+
+
+
 function attachStreamOnPublisherData(){
-    axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString').then((response)=>{
+    axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString').then(async (response)=>{
     followList = response.data
+    //followList = '-is:retweet from:620757286 OR -is:retweet from:Nikhilvyas14 OR -is:retweet from:Pratyus35377059'
     
-        
-        if(followList==="")
+    
+    if(followList==="")
         followList = "1"
         
         console.log(followList)  
         
-        stream  = twitterApi.stream('statuses/filter', {
-            follow: followList
-        })
+        stream = client.v2.searchStream({ autoConnect: false, "tweet.fields": [
+            "author_id"
+        ], });
         
-        stream.on('tweet', (tweet)=>{
+        const addedRules = await client.v2.updateStreamRules({
+            add: [
+              { value: followList},
+              ],
+          });
+        //   const rules = await client.v2.streamRules()
+
+        //   var ruleIds = rules.data;
+        //   const deleteRules = await client.v2.updateStreamRules({
+        //     delete: {
+        //       ids: ['1578672423334858753'],
+        //     },
+        //   });
+    
+        //   console.log(ruleIds)
+        
+        stream.on(ETwitterStreamEvent.Data, (tweet)=>{
           console.log("tweet captured") 
           console.log(tweet)
           
-          userList[tweet.user.id_str].TweetsCapturedCount = userList[tweet.user.id_str].TweetsCapturedCount + 1 
-          
-          axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString/updatePublisherTweetCount', {
-            "twitterId" : tweet.user.id_str ,
-            "count": userList[tweet.user.id_str].TweetsCapturedCount
+          userList[tweet.data.author_id].TweetsCapturedCount = userList[tweet.data.author_id].TweetsCapturedCount + 1 
+          let subscribers = new Map(Object.entries(userList[tweet.data.author_id].subscriberIds))
+          console.log(">>>>>>>>>>>>>")
+          console.log(subscribers)
+          console.log(userList[tweet.data.author_id].TweetsCapturedCount)
+          console.log(">>>>>");
+          axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updatePublisherTweetCount', {
+            "twitterId": tweet.data.author_id,
+            "count": userList[tweet.data.author_id].TweetsCapturedCount
           })
-
-          let subscribers = new Map(Object.entries(userList[tweet.user.id_str].subscriberIds))
-          
-          if(userList[tweet.user.id_str].isAuthenticated){
-            
-            if((userList[tweet.user.id_str].isPaidToIncreaseReach || userList[tweet.user.id_str].TweetsCapturedCount<=10)
-                && userList[tweet.user.id_str].isAllowedToIncreaseReachRetweets){
+          console.log("111222222221")
+          console.log("111111111111")
+          if(userList[tweet.data.author_id].isAuthenticated){
+            console.log("if")
+            if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
+                && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
               doAllRetweets(subscribers, tweet)
             }
           }
           else{
+            console.log("else")
              doCheckedRetweets(subscribers, tweet)
           }
          })  
         
-        stream.on("disconnect", (disconnectmsg)=>{
-          stream.stop()  
-          stream.start()
-        })
+        stream.on(ETwitterStreamEvent.Error, async (error)=> {
+            console.log("Error in Stream")
+             console.log(error)
+            // await stream.close()
+            // await stream.reconnect()
+            //attachStreamOnPublisherData()
+        });
 
-        stream.on("warning", (warning)=>{
-            stream.stop()
-            stream.start()
+        stream.on(ETwitterStreamEvent.ConnectionLost, (disconnectmsg)=>{
+           console.log("disconnect in Stream")
+           
+           attachStreamOnPublisherData()
         })
+        
+        stream.on(ETwitterStreamEvent.Connected, () => console.log('Stream is started.'));
+
+        await stream.connect({ autoReconnect: true, autoReconnectRetries: 5 });
     })   
 }
 
@@ -183,8 +233,7 @@ app.post("/onSubscriberAddInPublisher", (req, res)=>{
       "twitterId" : twitterSubscriberId
     }
     
-    followList = followList + twitterPublisherId + ",";
-    setStream()
+    addInFollowList(twitterPublisherId)
     res.status(200).send("User Deleted");
 })
 
@@ -198,12 +247,10 @@ app.post("/onSubscriberDeleteInPublisher", (req, res)=>{
     delete userList[twitterPublisherId].subscriberIds[twitterSubscriberId]
 
     if(userList[twitterPublisherId].subscriberIds[twitterSubscriberId] == undefined){
-        followList = followList.replace(twitterPublisherId + ",", "");
-        setStream()
+        removeInFollowList(twitterPublisherId)
     }
     else if( Object.keys(userList[twitterPublisherId].subscriberIds[twitterSubscriberId]).length==0){
-        followList = followList.replace(twitterPublisherId + ",", "");
-        setStream()
+        removeInFollowList(twitterPublisherId)
     }
     res.status(200).send("onSubscriberDeleteInPublisher");
 })
@@ -232,10 +279,11 @@ app.post("/onPaymentChangeInPublisher", (req, res)=>{
     subscribersList[twitterPublisherId].typeOfPlanPurchased = typeOfPlanPurchased
     
     if(!isPaidToIncreaseReach){
-        followList = followList.replace(twitterPublisherId + ",", "");
-        setStream()
+        removeInFollowList(twitterPublisherId)    
     }
-
+    else{
+        addInFollowList(twitterPublisherId)
+    }
     res.status(200).send("onPaymentChangeInPublisher");
 })
 
@@ -259,8 +307,10 @@ app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
 
     userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
     if(!IsAllowedToIncreaseReach){
-        followList = followList.replace(twitterPublisherId + ",", "");
-        setStream()
+        removeInFollowList(twitterPublisherId)
+    }
+    else{
+        addInFollowList(twitterPublisherId)
     }
 
     res.status(200).send("onIsAllowedToIncreaseReachChangeInPublisher");
@@ -296,5 +346,6 @@ app.listen(port , (req, res)=>{
     fetchTwitterPublishers()
     fetchTwitterSubscribers()
     attachStreamOnPublisherData()
+    
     console.log("Server started and running on port 3000")
 })
