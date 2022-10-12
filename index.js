@@ -350,6 +350,12 @@ app.get("/testFollowList", (req, res)=>{
     res.status(200).send(followList);
 })
 
+app.get("/getStreamRules", async(req, res)=>{
+    const rules = await client.v2.streamRules()
+  
+    res.status(200).send(rules);
+})
+
 app.listen(port , (req, res)=>{
     fetchTwitterPublishers()
     fetchTwitterSubscribers()
