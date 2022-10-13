@@ -121,11 +121,14 @@ function doCheckedRetweets(subscribers, tweet){
  function addInFollowList(Id){
   if(followList == ""){
     followList = followList + "-is:retweet from:" + Id;
+    setStream()
   }
   else{
+    if(!followList.includes(Id)){
     followList = followList + " OR " + "-is:retweet from:" + Id;
+    setStream()
+    }
   }
-  setStream()
  }
 
  function removeInFollowList(Id){
@@ -231,7 +234,7 @@ app.post("/onSubscriberAddInPublisher", (req, res)=>{
     console.log("User Deleted")
     
     const twitterPublisherId = req.body["twitterId"];
-    const twitterSubscriberId = req.body["subcriberId"];
+    const twitterSubscriberId = req.body["subscriberId"];
     const accessToken =  req.body["accessToken"];
     const accessTokenSecret = req.body["accessTokenSecret"];
     userList[twitterPublisherId].subscriberIds[twitterSubscriberId] = {
@@ -249,7 +252,7 @@ app.post("/onSubscriberDeleteInPublisher", (req, res)=>{
     console.log("onSubscriberDeleteInPublisher")
     
     const twitterPublisherId = req.body["twitterId"];
-    const twitterSubscriberId = req.body["subcriberId"];
+    const twitterSubscriberId = req.body["subscriberId"];
 
     delete userList[twitterPublisherId].subscriberIds[twitterSubscriberId]
 
@@ -312,7 +315,6 @@ app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
     const twitterPublisherId = req.body["twitterId"]
     const IsAllowedToIncreaseReach = req.body["isAllowedToIncreaseReachRetweets"]
 
-    //res.status(200).send({twitterPublisherId, IsAllowedToIncreaseReach});
     userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
     if(!IsAllowedToIncreaseReach){
         removeInFollowList(twitterPublisherId)
@@ -360,6 +362,5 @@ app.listen(port , (req, res)=>{
     fetchTwitterPublishers()
     fetchTwitterSubscribers()
     attachStreamOnPublisherData()
-    
     console.log("Server started and running on port 3000")
 })
