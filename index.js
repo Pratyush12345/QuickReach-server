@@ -284,9 +284,9 @@ app.post("/onPaymentChangeInPublisher", (req, res)=>{
     const isPaidToIncreaseReach = req.body["isPaidToIncreaseReach"];
     const typeOfPlanPurchased = req.body["typeOfPlanPurchased"];
 
-    subscribersList[twitterPublisherId].planPurchaseDate = planPurchaseDate
-    subscribersList[twitterPublisherId].isPaidToIncreaseReach = isPaidToIncreaseReach
-    subscribersList[twitterPublisherId].typeOfPlanPurchased = typeOfPlanPurchased
+    userList[twitterPublisherId].planPurchaseDate = planPurchaseDate
+    userList[twitterPublisherId].isPaidToIncreaseReach = isPaidToIncreaseReach
+    userList[twitterPublisherId].typeOfPlanPurchased = typeOfPlanPurchased
     
     if(!isPaidToIncreaseReach){
         removeInFollowList(twitterPublisherId)    
