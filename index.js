@@ -73,8 +73,8 @@ function doAllRetweets(subscribers, tweet){
         const retweetClient = new TwitterApi({
             appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
             appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
-            accessToken: element.accessToken,
-            accessSecret: element.accessTokenSecret,
+            accessToken:  subscribersList[element.twitterId].accessToken,
+            accessSecret: subscribersList[element.twitterId].accessTokenSecret,
           });
         
         const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
@@ -101,15 +101,22 @@ function doCheckedRetweets(subscribers, tweet){
          && subscribersList[element.twitterId].isAllowedAutomaticRetweets){
          
             console.log("eddddddddddddddddddddddddddddddd")
-        const retweetClient = new TwitterApi({
+        
+            const retweetClient = new TwitterApi({
                 appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
                 appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
-                accessToken: element.accessToken,
-                accessSecret: element.accessTokenSecret,
+                accessToken: subscribersList[element.twitterId].accessToken,
+                accessSecret: subscribersList[element.twitterId].accessTokenSecret,
               });
+        //const retweetClient = new TwitterApi('VmhScjVzQTJ5QXNvZUVZMGZkSDR0dl9wNTg5NTB6dThfeTU4QmQzeUJQUmtqOjE2NjYwMDY5ODA3OTA6MToxOmF0OjE');
         console.log("confirmmmmmm")
-        const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
-        
+        var createRetweet
+        try{
+         createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
+        }
+        catch(e){
+            console.log(e)
+        }
         const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
         console.log(createRetweet.data.retweeted)
         if(createRetweet.data.retweeted){
@@ -240,11 +247,9 @@ app.post("/onSubscriberAddInPublisher", (req, res)=>{
     
     const twitterPublisherId = req.body["twitterId"];
     const twitterSubscriberId = req.body["subscriberId"];
-    const accessToken =  req.body["accessToken"];
-    const accessTokenSecret = req.body["accessTokenSecret"];
+    // const accessToken =  req.body["accessToken"];
+    // const accessTokenSecret = req.body["accessTokenSecret"];
     userList[twitterPublisherId].subscriberIds[twitterSubscriberId] = {
-      "accessToken" : accessToken,
-      "accessTokenSecret" : accessTokenSecret,
       "twitterId" : twitterSubscriberId
     }
     
