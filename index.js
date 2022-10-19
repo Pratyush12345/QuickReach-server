@@ -33,6 +33,7 @@ var stream
 let userList = {}
 let subscribersList = {}
 let followList = ""
+var streamIsConnectedStatus = ""
 
 function fetchTwitterPublishers(){
     axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersData').then((response)=>{
@@ -219,6 +220,7 @@ function attachStreamOnPublisherData(){
         
         stream.on(ETwitterStreamEvent.Error, async (error)=> {
             console.log("Error in Stream")
+            streamIsConnectedStatus = "error in Stream"
              console.log(error)
             // await stream.close()
             // await stream.reconnect()
@@ -227,13 +229,22 @@ function attachStreamOnPublisherData(){
 
         stream.on(ETwitterStreamEvent.ConnectionLost, (disconnectmsg)=>{
            console.log("disconnect in Stream")
-           
+           streamIsConnectedStatus = "disconnect in Stream"
            attachStreamOnPublisherData()
         })
-        
-        stream.on(ETwitterStreamEvent.Connected, () => console.log('Stream is started.'));
 
-        await stream.connect({ autoReconnect: true, autoReconnectRetries: 5 });
+        stream.on(ETwitterStreamEvent.ConnectionClosed, (disconnectmsg)=>{
+            console.log("Stream is closed")
+            streamIsConnectedStatus = "Stream is closed"
+         })
+    
+        
+        stream.on(ETwitterStreamEvent.Connected, () => {
+            console.log('Stream is started.')
+            streamIsConnectedStatus = "stream Is started"
+        });
+
+        await stream.connect({ autoReconnect: true, autoReconnectRetries: 10 });
     })   
 }
 
@@ -366,6 +377,30 @@ app.get("/getStreamRules", async(req, res)=>{
     const rules = await client.v2.streamRules()
   
     res.status(200).send(rules);
+})
+
+app.get("/attachStreamConnection", async(req, res)=>{
+    attachStreamOnPublisherData();
+    res.status(200).send("startStreamConnection");
+})
+
+app.get("/connectStreamConnection", async(req, res)=>{
+    stream.connect({ autoReconnect: true, autoReconnectRetries: 10 })
+    res.status(200).send("connectStreamConnection");
+})
+
+app.get("/closeStreamConnection", async(req, res)=>{
+    stream.close()
+    res.status(200).send("stream is closed");
+})
+
+app.get("/destroyStreamConnection", async(req, res)=>{
+    stream.destroy()
+    res.status(200).send("stream is destroyed");
+})
+
+app.get("/statusStreamConnection", async(req, res)=>{
+    res.status(200).send(streamIsConnectedStatus);
 })
 
 app.listen(port , (req, res)=>{
