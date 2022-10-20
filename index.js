@@ -260,6 +260,9 @@ app.post("/onSubscriberAddInPublisher", (req, res)=>{
     const twitterSubscriberId = req.body["subscriberId"];
     // const accessToken =  req.body["accessToken"];
     // const accessTokenSecret = req.body["accessTokenSecret"];
+    if(userList[twitterPublisherId].subscriberIds == undefined){
+        userList[twitterPublisherId].subscriberIds = {}
+    }
     userList[twitterPublisherId].subscriberIds[twitterSubscriberId] = {
       "twitterId" : twitterSubscriberId
     }
@@ -294,6 +297,16 @@ app.post("/onSubscriberAdd", (req, res)=>{
     subscribersList[twitterSubscriberId] = req.body
     
     res.status(200).send("subscriber added");
+})
+
+app.post("/onPublisherAdd", (req, res)=>{
+    console.log("subscriber added")
+    
+    const twitterPublisherId = req.body["twitterId"];
+    
+    userList[twitterPublisherId] = req.body
+    
+    res.status(200).send("publisher added");
 })
 
 
@@ -401,6 +414,12 @@ app.get("/destroyStreamConnection", async(req, res)=>{
 
 app.get("/statusStreamConnection", async(req, res)=>{
     res.status(200).send(streamIsConnectedStatus);
+})
+
+app.get("/restartFetching", async(req, res)=>{
+    fetchTwitterPublishers()
+    fetchTwitterSubscribers()
+    res.status(200).send("restart fetching");
 })
 
 app.listen(port , (req, res)=>{
