@@ -392,6 +392,11 @@ app.get("/getStreamRules", async(req, res)=>{
     res.status(200).send(rules);
 })
 
+app.get("/getVersion", async(req, res)=>{
+  
+    res.status(200).send("version-1");
+})
+
 app.get("/attachStreamConnection", async(req, res)=>{
     attachStreamOnPublisherData();
     res.status(200).send("startStreamConnection");
