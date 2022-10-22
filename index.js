@@ -34,6 +34,7 @@ let userList = {}
 let subscribersList = {}
 let followList = ""
 var streamIsConnectedStatus = ""
+var errorStream
 
 function fetchTwitterPublishers(){
     axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersData').then((response)=>{
@@ -221,6 +222,7 @@ function attachStreamOnPublisherData(){
         stream.on(ETwitterStreamEvent.Error, async (error)=> {
             console.log("Error in Stream")
             streamIsConnectedStatus = "error in Stream"
+            errorStream = error
              console.log(error)
             // await stream.close()
             // await stream.reconnect()
@@ -244,7 +246,7 @@ function attachStreamOnPublisherData(){
             streamIsConnectedStatus = "stream Is started"
         });
 
-        await stream.connect({ autoReconnect: true, autoReconnectRetries: 10 });
+        await stream.connect({ autoReconnect: true, autoReconnectRetries: Infinity });
     })   
 }
 
@@ -394,7 +396,12 @@ app.get("/getStreamRules", async(req, res)=>{
 
 app.get("/getVersion", async(req, res)=>{
   
-    res.status(200).send("version-1");
+    res.status(200).send("version-2");
+})
+
+app.get("/getErrorAny", async(req, res)=>{
+  
+    res.status(200).send(errorStream);
 })
 
 app.get("/attachStreamConnection", async(req, res)=>{
@@ -410,6 +417,11 @@ app.get("/connectStreamConnection", async(req, res)=>{
 app.get("/closeStreamConnection", async(req, res)=>{
     stream.close()
     res.status(200).send("stream is closed");
+})
+
+app.get("/reconnectStreamConnection", async(req, res)=>{
+    stream.reconnect()
+    res.status(200).send("stream is reconnected");
 })
 
 app.get("/destroyStreamConnection", async(req, res)=>{
