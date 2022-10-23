@@ -440,7 +440,7 @@ app.get("/getStreamRules", async(req, res)=>{
 
 app.get("/getVersion", async(req, res)=>{
   
-    res.status(200).send("version-3");
+    res.status(200).send("version-4");
 })
 
 app.get("/getErrorAny", async(req, res)=>{
