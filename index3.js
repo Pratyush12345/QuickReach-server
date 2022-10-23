@@ -69,8 +69,10 @@ async function setStream(){
 
 
 function doAllRetweets(subscribers, tweet){
+    
     subscribers.forEach(async(element, key) => {
-          const retweetClient = new TwitterApi({
+           
+        const retweetClient = new TwitterApi({
             appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
             appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
             accessToken:  subscribersList[element.twitterId].accessToken,
@@ -80,7 +82,7 @@ function doAllRetweets(subscribers, tweet){
         const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
         
         const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
-        console.log(createRetweet)
+        
         if(createRetweet.data.retweeted){
             subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
                 axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
@@ -190,77 +192,31 @@ function attachStreamOnPublisherData(){
         
         stream.on(ETwitterStreamEvent.Data, (tweet)=>{
           console.log("tweet captured") 
-          console.log(userList[tweet.data.author_id].subscriberIds)
+          console.log(tweet)
+          
           userList[tweet.data.author_id].TweetsCapturedCount = userList[tweet.data.author_id].TweetsCapturedCount + 1 
           let subscribers = new Map(Object.entries(userList[tweet.data.author_id].subscriberIds))
-          
+          console.log(">>>>>>>>>>>>>")
+          console.log(subscribers)
+          console.log(userList[tweet.data.author_id].TweetsCapturedCount)
+          console.log(">>>>>");
           axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updatePublisherTweetCount', {
             "twitterId": tweet.data.author_id,
             "count": userList[tweet.data.author_id].TweetsCapturedCount
           })
-          
-          var count = -1;
-          var localUserList = [];
-
-          var timer = setInterval(()=>{
-            count++;
-            var totalUserLength
-            
-            if(count == 0){
-               totalUserLength = subscribers.length
-               localUserList = Array.from(subscribers.keys())
-            }else{
-               totalUserLength = localUserList.length
+          console.log("111222222221")
+          console.log("111111111111")
+          if(userList[tweet.data.author_id].isAuthenticated){
+            console.log("if")
+            if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
+                && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
+              doAllRetweets(subscribers, tweet)
             }
-            let passMap = new Map();
-            
-            if(totalUserLength>5){
-                
-                for(var i =0; i<5;i++){
-                 passMap[localUserList[i]] = subscribers.get(localUserList[i]);
-                }
-                passMap = new Map(Object.entries(passMap))
-                        
-                if(userList[tweet.data.author_id].isAuthenticated){
-                  console.log("if")
-                  if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
-                      && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
-                        doAllRetweets(passMap, tweet)
-                  }
-                }
-                else{
-                  console.log("else")
-                   doCheckedRetweets(passMap, tweet)
-                }
-                 localUserList = localUserList.splice(5, totalUserLength)
-                console.log(localUserList)
-            
-            }else{
-                for(var i =0; i<localUserList.length;i++){
-                    passMap[localUserList[i]] = subscribers.get(localUserList[i]);
-                   }
-                   passMap = new Map(Object.entries(passMap))
-                        
-              if(userList[tweet.data.author_id].isAuthenticated){
-                console.log("if")
-                if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
-                    && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
-                        doAllRetweets(passMap, tweet)
-                }
-              }
-              else{
-                console.log("else")
-                        
-                 doCheckedRetweets(passMap, tweet)
-              }
-                localUserList = []
-                clearInterval(timer)
-            }
-
-          }, 3000)
-
-
-          
+          }
+          else{
+            console.log("else")
+             doCheckedRetweets(subscribers, tweet)
+          }
          })  
         
         stream.on(ETwitterStreamEvent.Error, async (error)=> {
