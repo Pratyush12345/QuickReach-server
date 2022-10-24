@@ -245,7 +245,7 @@ function attachStreamOnPublisherData(){
                   //console.log("condnnnnnnnnnnnnnnn 555555555")
                    doCheckedRetweets(passMap, tweet)
                 }
-                 localUserList = localUserList.splice(5, totalUserLength)
+                 localUserList = localUserList.splice(2, totalUserLength)
                 //console.log(localUserList)
             
             }else{
