@@ -74,6 +74,7 @@ function doAllRetweets(subscribers, tweet){
     //console.log(subscribers)
     subscribers.forEach(async(element, key) => {
         //console.log("loooopppppppppp")  
+     if(subscribersList[element.twitterId].isAllowedAutomaticRetweets){   
         const retweetClient = new TwitterApi({
             appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
             appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
@@ -92,7 +93,7 @@ function doAllRetweets(subscribers, tweet){
                             "count": subscribersList[element.twitterId].retweetsDoneCount
                 })
         }
-
+    }
     });
 }
 
