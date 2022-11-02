@@ -76,8 +76,8 @@ function doAllRetweets(subscribers, tweet){
         //console.log("loooopppppppppp")  
      if(subscribersList[element.twitterId].isAllowedAutomaticRetweets){   
         const retweetClient = new TwitterApi({
-            appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
-            appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
+            appKey: 'mApGFPhR3WqsFQoVMt6aVirHf',
+            appSecret: 'YZQ2cLatHcSekfVB6xQWpOnwCAaJWUkhz3aPbuNgyKBeRm8rqP',
             accessToken:  subscribersList[element.twitterId].accessToken,
             accessSecret: subscribersList[element.twitterId].accessTokenSecret,
           });
@@ -110,8 +110,8 @@ function doCheckedRetweets(subscribers, tweet){
             //console.log("eddddddddddddddddddddddddddddddd")
         
             const retweetClient = new TwitterApi({
-                appKey: 'K0xNtDv7VouUC294pBRPgAHdr',
-                appSecret: '2aTC67swxHKP64SBCQBnnsfGKR5Ec0iWKoGR3eCV5V1thsoMsR',
+                appKey: 'mApGFPhR3WqsFQoVMt6aVirHf',
+                appSecret: 'YZQ2cLatHcSekfVB6xQWpOnwCAaJWUkhz3aPbuNgyKBeRm8rqP',
                 accessToken: subscribersList[element.twitterId].accessToken,
                 accessSecret: subscribersList[element.twitterId].accessTokenSecret,
               });
