@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser')
+const twit = require('twit')
 const { ETwitterStreamEvent, TweetStream, TwitterApi, ETwitterApiError, auth} =require('twitter-api-v2');
 const axios  = require('axios')
 const { response, json } = require('express')
@@ -75,7 +76,44 @@ function doAllRetweets(subscribers, tweet){
     subscribers.forEach(async(element, key) => {
         //console.log("loooopppppppppp")  
      if(subscribersList[element.twitterId].isAllowedAutomaticRetweets){   
-        const retweetClient = new TwitterApi({
+        
+        if(subscribersList[element.twitterId].isLoginByURL){
+            var retweetCred = new twit({
+                consumer_key : "n58AlgPKH47GIWrmR3eH4vE8z" ,
+                consumer_secret : "vomHhRkABsllgCPRuuqYw6DB5l3pjkBmTRIlAhpE09Mp7ktOSt",
+                access_token : subscribersList[element.twitterId].accessToken,
+                access_token_secret : subscribersList[element.twitterId].accessTokenSecret,
+                timeout_ms : 60 * 500
+            })
+            
+            retweetCred.post("statuses/retweet/:id",{
+                id: tweet.data.id
+                },
+            
+                (err, data, res)=>{
+                    if(data.errors!=undefined){
+                    subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
+                    axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
+                            "twitterId" : element.twitterId ,
+                            "count": subscribersList[element.twitterId].retweetsDoneCount
+                 })
+                }
+                }
+            )
+            
+            retweetCred.post("favorites/create",{
+                id: tweet.data.id
+                },
+            
+                (err, data, res)=>{
+                    console.log("Liked");
+                }
+            )
+
+        }
+        else{
+        
+            const retweetClient = new TwitterApi({
             appKey: 'mApGFPhR3WqsFQoVMt6aVirHf',
             appSecret: 'YZQ2cLatHcSekfVB6xQWpOnwCAaJWUkhz3aPbuNgyKBeRm8rqP',
             accessToken:  subscribersList[element.twitterId].accessToken,
@@ -85,7 +123,7 @@ function doAllRetweets(subscribers, tweet){
         const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
         
         const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
-        console.log(createRetweet)
+        
         if(createRetweet.data.retweeted){
             subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
                 axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
@@ -94,6 +132,7 @@ function doAllRetweets(subscribers, tweet){
                 })
         }
     }
+   }
     });
 }
 
@@ -108,7 +147,41 @@ function doCheckedRetweets(subscribers, tweet){
          && subscribersList[element.twitterId].isAllowedAutomaticRetweets){
          
             //console.log("eddddddddddddddddddddddddddddddd")
-        
+            if(subscribersList[element.twitterId].isLoginByURL){
+                var retweetCred = new twit({
+                    consumer_key : "n58AlgPKH47GIWrmR3eH4vE8z" ,
+                    consumer_secret : "vomHhRkABsllgCPRuuqYw6DB5l3pjkBmTRIlAhpE09Mp7ktOSt",
+                    access_token : subscribersList[element.twitterId].accessToken,
+                    access_token_secret : subscribersList[element.twitterId].accessTokenSecret,
+                    timeout_ms : 60 * 500
+                })
+                
+                retweetCred.post("statuses/retweet/:id",{
+                    id: tweet.data.id
+                    },
+                
+                    (err, data, res)=>{
+                        if(data.errors!=undefined){
+                        subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
+                        axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
+                                "twitterId" : element.twitterId ,
+                                "count": subscribersList[element.twitterId].retweetsDoneCount
+                     })
+                    }
+                    }
+                )
+                
+                retweetCred.post("favorites/create",{
+                    id: tweet.data.id
+                    },
+                
+                    (err, data, res)=>{
+                        console.log("Liked");
+                    }
+                )
+    
+            }
+            else{
             const retweetClient = new TwitterApi({
                 appKey: 'mApGFPhR3WqsFQoVMt6aVirHf',
                 appSecret: 'YZQ2cLatHcSekfVB6xQWpOnwCAaJWUkhz3aPbuNgyKBeRm8rqP',
@@ -134,6 +207,7 @@ function doCheckedRetweets(subscribers, tweet){
                 })
         }
        }
+      }
       });
 }
 
