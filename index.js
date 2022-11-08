@@ -33,7 +33,7 @@ const client = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAFz6hAEAAAAARD6nNnZn96aDoOuSD
 var stream
 let userList = {}
 let subscribersList = {}
-let followList = ""
+let ruleMap = {}
 var streamIsConnectedStatus = ""
 var errorStream
 
@@ -49,22 +49,114 @@ function fetchTwitterSubscribers(){
     })  
 }
 
-async function setStream(){
-      const rules = await client.v2.streamRules()
 
-      var ruleIds = rules.data.map(rule => rule.id);
-      
-      const deleteRules = await client.v2.updateStreamRules({
-        delete: {
-          ids: ruleIds,
-        },
-      });
 
-      const addedRules = await client.v2.updateStreamRules({
-        add: [
-          {value: followList},
-          ],
-      });
+  async function addInRuleMap(Id){
+
+    var length = Object.keys(ruleMap).length
+    var isIncluded = false;
+    
+    
+    Object.keys(ruleMap).forEach((key)=>{
+        var ruleList = ruleMap[key];
+          
+            if(ruleList.includes(Id)){
+                isIncluded = true
+            }
+    })
+    
+    if(!isIncluded){
+        var rule = "rule" + length;
+        
+        if(ruleMap[rule].length + ("-is:retweet from:" + Id).length > 512){
+            console.log("iffff") 
+            length = length + 1
+             var newRule = "rule" + length
+             ruleMap[newRule] = "-is:retweet from:" + Id
+             const addedRules = await client.v2.updateStreamRules({
+                add: [
+                  {value: ruleMap[newRule]},
+                  ],
+              });
+              
+        }
+        else{
+            const rules = await client.v2.streamRules()
+
+            var ruleIds = []
+            rules.data.forEach((ele)=>{
+                if(ele.value.includes(ruleMap[rule]))
+              { 
+                ruleIds.push(ele.id)
+              }
+            })
+            const deleteRules = await client.v2.updateStreamRules({
+                delete: {
+                ids: ruleIds,
+                },
+            });
+
+            ruleMap[rule] = ruleMap[rule] + " OR " + "-is:retweet from:" + Id;
+
+            const addedRules = await client.v2.updateStreamRules({
+                add: [
+                {value: ruleMap[rule] },
+                ],
+            });
+            console.log("rule updated else")
+        }
+
+    }
+    
+   }
+  
+   
+
+ async function removeInRuleMap(Id){
+    var isIncluded = false;
+    var rule;
+    Object.keys(ruleMap).forEach((key)=>{
+        var ruleList = ruleMap[key];
+          
+            if(ruleList.includes(Id)){
+                isIncluded = true
+                rule = key
+            }
+    })
+    
+    if(isIncluded){
+        var ruleList = ruleMap[rule]
+        
+        const rules = await client.v2.streamRules()
+
+            var ruleIds = []
+            rules.data.forEach((rule)=>{
+              if(rule.value.includes(ruleList))
+              {
+                ruleIds.push(rule.id)
+              }
+            })
+            const deleteRules = await client.v2.updateStreamRules({
+                delete: {
+                ids: ruleIds,
+                },
+            });
+            console.log()
+         
+        if(ruleList.includes("-is:retweet from:" + Id + " OR ")){
+            ruleList = ruleList.replace("-is:retweet from:" + Id + " OR ", "");
+          }
+          else{
+            ruleList = ruleList.replace(" OR -is:retweet from:" + Id, "");
+          }
+          ruleList = ruleList.trim()
+          ruleMap[rule] = ruleList
+          const addedRules = await client.v2.updateStreamRules({
+            add: [
+            {value: ruleList },
+            ],
+        });
+    }
     
 }
 
@@ -211,53 +303,44 @@ function doCheckedRetweets(subscribers, tweet){
       });
 }
 
- function addInFollowList(Id){
-  if(followList == ""){
-    followList = followList + "-is:retweet from:" + Id;
-    setStream()
-  }
-  else{
-    if(!followList.includes(Id)){
-    followList = followList + " OR " + "-is:retweet from:" + Id;
-    setStream()
-    }
-  }
- }
 
- function removeInFollowList(Id){
-    if(followList.includes("-is:retweet from:" + Id + " OR ")){
-        followList = followList.replace("-is:retweet from:" + Id + " OR ", "");
-      }
-      else{
-        followList = followList.replace(" OR -is:retweet from:" + Id, "");
-      }
-      followList = followList.trim()
-  setStream()
-}
 
 
 
 
 function attachStreamOnPublisherData(){
-    axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersString').then(async (response)=>{
-    followList = response.data
-    //followList = '-is:retweet from:620757286 OR -is:retweet from:Nikhilvyas14 OR -is:retweet from:Pratyus35377059 OR -is:retweet from:843452088'
-    //followList = "-is:retweet from:32468665 OR -is:retweet from:92708272 OR -is:retweet from:620757286 OR -is:retweet from:843452088 OR -is:retweet from:1447949844 OR -is:retweet from: 843452088 OR -is:retweet from:1258333066738704384 OR -is:retweet from:1333386621173919745 OR -is:retweet from:1451942378072252424 OR -is:retweet from:1537505398990807041 OR -is:retweet from:1583126038942392320 OR -is:retweet from:2449580952 OR -is:retweet from:4643150654 OR -is:retweet from:4824087681 OR -is:retweet from:753891879192784896 OR -is:retweet from:852111690615410688"
+    axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getRulesMap').then(async (response)=>{
+    ruleMap = response.data
     
-    if(followList==="")
-        followList = "1"
+    if(ruleMap==={})
+        ruleMap = {"rule1" : "1"}
         
-        console.log(followList)  
+        console.log(ruleMap)  
         
         stream = client.v2.searchStream({ autoConnect: false, "tweet.fields": [
             "author_id"
         ], });
         
+        let addList = []
+        
+        Object.keys(ruleMap).forEach((key)=>{
+         addList.push({"value" : ruleMap[key]})
+        })
+        
+        const rules = await client.v2.streamRules()
+
+        var ruleIds = rules.data.map(rule => rule.id);
+        
+        const deleteRules = await client.v2.updateStreamRules({
+            delete: {
+            ids: ruleIds,
+            },
+        });
+
         const addedRules = await client.v2.updateStreamRules({
-            add: [
-              { value: followList},
-              ],
+            add: addList,
           });
+
         //   const rules = await client.v2.streamRules()
 
         //   var ruleIds = rules.data;
@@ -410,7 +493,7 @@ app.post("/onSubscriberAddInPublisher", (req, res)=>{
       "twitterId" : twitterSubscriberId
     }
     
-    addInFollowList(twitterPublisherId)
+    addInRuleMap(twitterPublisherId)
     res.status(200).send("User Deleted");
 })
 
@@ -424,10 +507,10 @@ app.post("/onSubscriberDeleteInPublisher", (req, res)=>{
     delete userList[twitterPublisherId].subscriberIds[twitterSubscriberId]
 
     if(userList[twitterPublisherId].subscriberIds[twitterSubscriberId] == undefined){
-        removeInFollowList(twitterPublisherId)
+        removeInRuleMap(twitterPublisherId)
     }
     else if( Object.keys(userList[twitterPublisherId].subscriberIds[twitterSubscriberId]).length==0){
-        removeInFollowList(twitterPublisherId)
+        removeInRuleMap(twitterPublisherId)
     }
     res.status(200).send("onSubscriberDeleteInPublisher");
 })
@@ -466,10 +549,10 @@ app.post("/onPaymentChangeInPublisher", (req, res)=>{
     userList[twitterPublisherId].typeOfPlanPurchased = typeOfPlanPurchased
     
     if(!isPaidToIncreaseReach){
-        removeInFollowList(twitterPublisherId)    
+        removeInRuleMap(twitterPublisherId)    
     }
     else{
-        addInFollowList(twitterPublisherId)
+        addInRuleMap(twitterPublisherId)
     }
     res.status(200).send("onPaymentChangeInPublisher");
 })
@@ -494,10 +577,10 @@ app.post("/onIsAllowedToIncreaseReachChangeInPublisher", (req, res)=>{
 
     userList[twitterPublisherId].isAllowedToIncreaseReachRetweets = IsAllowedToIncreaseReach
     if(!IsAllowedToIncreaseReach){
-        removeInFollowList(twitterPublisherId)
+        removeInRuleMap(twitterPublisherId)
     }
     else{
-        addInFollowList(twitterPublisherId)
+        addInRuleMap(twitterPublisherId)
     }
 
     res.status(200).send("onIsAllowedToIncreaseReachChangeInPublisher");
@@ -523,10 +606,9 @@ app.get("/testSubscriberList", (req, res)=>{
     res.status(200).send(subscribersList);
 })
 
-app.get("/testFollowList", (req, res)=>{
-    console.log("Follow List")
-    console.log(followList)
-    res.status(200).send(followList);
+app.get("/getRuleMap", (req, res)=>{
+    console.log(ruleMap)
+    res.status(200).send(ruleMap);
 })
 
 app.get("/getStreamRules", async(req, res)=>{
