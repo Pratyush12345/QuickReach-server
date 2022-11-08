@@ -327,6 +327,7 @@ function attachStreamOnPublisherData(){
          addList.push({"value" : ruleMap[key]})
         })
         
+        try{
         const rules = await client.v2.streamRules()
 
         var ruleIds = rules.data.map(rule => rule.id);
@@ -336,7 +337,10 @@ function attachStreamOnPublisherData(){
             ids: ruleIds,
             },
         });
-
+        }
+        catch(e){
+            console.log(e)
+        } 
         const addedRules = await client.v2.updateStreamRules({
             add: addList,
           });
