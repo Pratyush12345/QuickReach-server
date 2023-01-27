@@ -324,12 +324,16 @@ function attachStreamOnPublisherData(){
         let addList = []
         
         Object.keys(ruleMap).forEach((key)=>{
+         if(ruleMap[key]=="rule1" || ruleMap[key]=="rule2" || ruleMap[key]=="rule3"
+         ||ruleMap[key]=="rule4" || ruleMap[key]=="rule5")   
          addList.push({"value" : ruleMap[key]})
         })
         
         try{
         const rules = await client.v2.streamRules()
-
+        
+        if(rules.data!= undefined)
+        {
         var ruleIds = rules.data.map(rule => rule.id);
         
         const deleteRules = await client.v2.updateStreamRules({
@@ -337,6 +341,7 @@ function attachStreamOnPublisherData(){
             ids: ruleIds,
             },
         });
+        }
         }
         catch(e){
             console.log(e)
