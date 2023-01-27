@@ -324,8 +324,8 @@ function attachStreamOnPublisherData(){
         let addList = []
         
         Object.keys(ruleMap).forEach((key)=>{
-         if(ruleMap[key]=="rule1" || ruleMap[key]=="rule2" || ruleMap[key]=="rule3"
-         ||ruleMap[key]=="rule4" || ruleMap[key]=="rule5")   
+         if(key=="rule1" || key=="rule2" || key=="rule3"
+         ||key=="rule4" || key=="rule5")  
          addList.push({"value" : ruleMap[key]})
         })
         
