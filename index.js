@@ -235,7 +235,7 @@ function doCheckedRetweets(subscribers, tweet){
     
     subscribers.forEach(async(element, key) => {
        //console.log("inside----------------------------")
-      if((subscribersList[element.twitterId].isPaidForDoingRetweet || subscribersList[element.twitterId].retweetsDoneCount<10)
+      if((subscribersList[element.twitterId].isPaidForDoingRetweet || subscribersList[element.twitterId].retweetsDoneCount<10000)
          && subscribersList[element.twitterId].isAllowedAutomaticRetweets){
          
             //console.log("eddddddddddddddddddddddddddddddd")
@@ -401,7 +401,7 @@ function attachStreamOnPublisherData(){
                         
                 if(userList[tweet.data.author_id].isAuthenticated){
                   //console.log("if")
-                  if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
+                  if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10000)
                       && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
                         //console.log("allllllllllllll 555555555")
                         doAllRetweets(passMap, tweet)
@@ -431,7 +431,7 @@ function attachStreamOnPublisherData(){
                      
               if(userList[tweet.data.author_id].isAuthenticated){
                 //console.log("if")
-                if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10)
+                if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=10000)
                     && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
                         //console.log("allllllllllllll 2222222222222222")
                         doAllRetweets(passMap, tweet)
