@@ -36,6 +36,8 @@ let subscribersList = {}
 let ruleMap = {}
 var streamIsConnectedStatus = ""
 var errorStream
+var isAllowedTweet = true
+var timerOf15Minute
 
 function fetchTwitterPublishers(){
     axios.get('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/getTwitterPublishersData').then((response)=>{
@@ -69,7 +71,7 @@ function fetchTwitterSubscribers(){
         var rule = "rule" + length;
         
         if(ruleMap[rule].length + ("-is:retweet from:" + Id).length > 512){
-            console.log("iffff") 
+            //console.log("iffff") 
             length = length + 1
              var newRule = "rule" + length
              ruleMap[newRule] = "-is:retweet from:" + Id
@@ -160,6 +162,14 @@ function fetchTwitterSubscribers(){
     
 }
 
+function set15minTimerOut(){
+    isAllowedTweet = false
+    timerOf15Minute = setTimeout(()=>{
+            isAllowedTweet = true
+            clearTimeout(timerOf15Minute)
+    }, 960000 )
+   
+}
 
 function doAllRetweets(subscribers, tweet){
 
@@ -211,18 +221,31 @@ function doAllRetweets(subscribers, tweet){
             accessToken:  subscribersList[element.twitterId].accessToken,
             accessSecret: subscribersList[element.twitterId].accessTokenSecret,
           });
-        
-        const createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
-        
-        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
-        
+          
+          var createRetweet
+      try{  
+        createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
         if(createRetweet.data.retweeted){
             subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1
                 axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
                             "twitterId" : element.twitterId ,
                             "count": subscribersList[element.twitterId].retweetsDoneCount
-                })
+                })    
         }
+    }
+    catch(e){
+        // console.log("problem in retweet do check")
+        // console.log(e)
+        // console.log(e.code)
+        if(e.code == 429 && isAllowedTweet){
+            //console.log("setting time out do all")
+         set15minTimerOut()   
+        }
+
+    }
+        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
+        
+        
     }
    }
     });
@@ -285,19 +308,26 @@ function doCheckedRetweets(subscribers, tweet){
         var createRetweet
         try{
          createRetweet = await retweetClient.v2.retweet(element.twitterId, tweet.data.id)
-        }
-        catch(e){
-            console.log(e)
-        }
-        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
-        //console.log(createRetweet.data.retweeted)
-        if(createRetweet.data.retweeted){
+         if(createRetweet.data.retweeted){
             subscribersList[element.twitterId].retweetsDoneCount = subscribersList[element.twitterId].retweetsDoneCount + 1 
                 axios.post('https://us-central1-quickreach-aed40.cloudfunctions.net/restApis/updateSubscriberReTweetCount', {
                             "twitterId" : element.twitterId ,
                             "count": subscribersList[element.twitterId].retweetsDoneCount
                 })
         }
+        }
+        catch(e){
+            // console.log("problem in retweet do check")
+            // console.log(e)
+            // console.log(e.code)
+            if(e.code == 429 && isAllowedTweet){
+                //console.log("setting time out do check")
+                set15minTimerOut()   
+               }
+        }
+        const createLike = await retweetClient.v2.like(element.twitterId, tweet.data.id)
+        //console.log(createRetweet.data.retweeted)
+        
        }
       }
       });
@@ -374,6 +404,8 @@ function attachStreamOnPublisherData(){
           var count = -1;
           var localUserList = [];
           var timer = setInterval(()=>{
+          if(isAllowedTweet){
+
             count++;
             var totalUserLength
             
@@ -385,8 +417,8 @@ function attachStreamOnPublisherData(){
                totalUserLength = localUserList.length
             }
             let passMap = new Map();
-            //console.log("lengthhhh")
-            //console.log(totalUserLength)
+            // console.log("lengthhhh")
+            // console.log(totalUserLength)
             if(totalUserLength>2){
                 //console.log("subscribers5555555555555--------")
                 //console.log(subscribers)
@@ -408,8 +440,8 @@ function attachStreamOnPublisherData(){
                   }
                 }
                 else{
-                  //console.log("else")
-                  //console.log("condnnnnnnnnnnnnnnn 555555555")
+                  // console.log("else")
+                  // console.log("condnnnnnnnnnnnnnnn 555555555")
                    doCheckedRetweets(passMap, tweet)
                 }
                  localUserList = localUserList.splice(2, totalUserLength)
@@ -422,7 +454,7 @@ function attachStreamOnPublisherData(){
                 for(var i =0; i<localUserList.length;i++){
                     passMap[localUserList[i]] = subscribers.get(localUserList[i]);
                    }
-                  // console.log("passMap 22222222222222222222");
+                   //console.log("passMap 22222222222222222222");
                 //console.log(passMap)
                 
                    passMap = new Map(Object.entries(passMap))
@@ -430,7 +462,7 @@ function attachStreamOnPublisherData(){
                 //console.log(passMap)
                      
               if(userList[tweet.data.author_id].isAuthenticated){
-                //console.log("if")
+                console.log("if")
                 if((userList[tweet.data.author_id].isPaidToIncreaseReach || userList[tweet.data.author_id].TweetsCapturedCount<=1000000)
                     && userList[tweet.data.author_id].isAllowedToIncreaseReachRetweets){
                         //console.log("allllllllllllll 2222222222222222")
@@ -438,22 +470,23 @@ function attachStreamOnPublisherData(){
                 }
               }
               else{
-                //console.log("else")
-                //console.log("condnnnnnnnnnnnnnnn 22222222222")       
+                // console.log("else")
+                // console.log("condnnnnnnnnnnnnnnn 22222222222")       
                  doCheckedRetweets(passMap, tweet)
               }
                 localUserList = []
                 clearInterval(timer)
             }
 
-          }, 180000)
+          }
+        }, 180000)
 
 
           
          })  
         
         stream.on(ETwitterStreamEvent.Error, async (error)=> {
-            console.log("Error in Stream")
+            //console.log("Error in Stream")
             streamIsConnectedStatus = "error in Stream"
             errorStream = error
              console.log(error)
@@ -628,7 +661,7 @@ app.get("/getStreamRules", async(req, res)=>{
 
 app.get("/getVersion", async(req, res)=>{
   
-    res.status(200).send("version-5");
+    res.status(200).send("version-6");
 })
 
 app.get("/getErrorAny", async(req, res)=>{
@@ -663,6 +696,9 @@ app.get("/destroyStreamConnection", async(req, res)=>{
 
 app.get("/statusStreamConnection", async(req, res)=>{
     res.status(200).send(streamIsConnectedStatus);
+})
+app.get("/getAllowTweetStatus", async(req, res)=>{
+  res.status(200).send(isAllowedTweet);
 })
 
 app.get("/restartFetching", async(req, res)=>{
